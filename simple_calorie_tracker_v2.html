@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カロリー記録</title>
+<style>
+body{font-family:sans-serif;max-width:500px;margin:20px auto;padding:10px}
+.meal{border:1px solid #ccc;border-radius:8px;padding:12px;margin-bottom:12px}
+input{width:90px;padding:8px;margin:4px}
+button{padding:6px 10px}
+.total{font-weight:bold}
+</style>
+</head>
+<body>
+<h1>今日のカロリー</h1>
+
+<div id="meals"></div>
+
+<h2>総合計: <span id="grandTotal">0</span> kcal</h2>
+
+<script>
+const mealNames=["朝食","昼食","夕食","間食"];
+const container=document.getElementById("meals");
+
+function createMeal(name,index){
+  const div=document.createElement("div");
+  div.className="meal";
+  div.innerHTML=`
+    <h3>${name}</h3>
+    <div class="items"></div>
+    <button>＋1品追加</button>
+    <p class="total">小計: <span>0</span> kcal</p>
+  `;
+
+  const items=div.querySelector(".items");
+  const btn=div.querySelector("button");
+
+  function addItem(value=""){
+    const input=document.createElement("input");
+    input.type="number";
+    input.placeholder="kcal";
+    input.value=value;
+    input.addEventListener("input",saveAndUpdate);
+    items.appendChild(input);
+  }
+
+  btn.onclick=()=>addItem();
+  addItem();
+
+  function mealTotal(){
+    return [...items.querySelectorAll("input")]
+      .reduce((s,i)=>s+(Number(i.value)||0),0);
+  }
+
+  function saveAndUpdate(){
+    const data=[...items.querySelectorAll("input")].map(i=>i.value);
+    localStorage.setItem("meal_"+index,JSON.stringify(data));
+    div.querySelector("span").textContent=mealTotal();
+    updateGrand();
+  }
+
+  const saved=JSON.parse(localStorage.getItem("meal_"+index)||"null");
+  if(saved){
+    items.innerHTML="";
+    saved.forEach(v=>addItem(v));
+  }
+
+  [...items.querySelectorAll("input")].forEach(i=>i.addEventListener("input",saveAndUpdate));
+  div.saveAndUpdate=saveAndUpdate;
+  container.appendChild(div);
+}
+
+function updateGrand(){
+  let total=0;
+  document.querySelectorAll(".meal").forEach(meal=>{
+    total += Number(meal.querySelector(".total span").textContent)||0;
+  });
+  document.getElementById("grandTotal").textContent=total;
+}
+
+mealNames.forEach(createMeal);
+document.querySelectorAll(".meal").forEach(m=>m.saveAndUpdate());
+</script>
+</body>
+</html>
